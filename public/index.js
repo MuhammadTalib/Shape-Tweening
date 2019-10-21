@@ -1,7 +1,7 @@
 window.onload=init()
-var cvs,ctx,count,x1,y1,x2,y2,shapeNumber,shape1,shape2,t,clearButton,shape,tweenShape,pencil_line,mouse
+var cvs,ctx,count,x1,y1,x2,y2,shapeNumber,shape1,shape2,t,clearButton,shape,tweenShape,selectIndex,pencil_line,mouse,shapeSelection,selectMoving
 function init(){
-	shapeNumber=0,t=0,count=0,pencil_line=0,mouse=0
+	shapeNumber=0,t=0,count=0,pencil_line=0,mouse=0,shapeSelection=0,selectMoving=0,selectIndex=null
 	shape1=new Shape()
 	shape2=new Shape()
 
@@ -12,18 +12,14 @@ function init(){
 	ctx.lineJoin="round";
 	ctx.lineCap="round";
 	ctx.lineWidth = 1;
-
 	clearButton=document.getElementById("clear")
-    
 	shape=new Shape()
 
 	clearButton.onclick=function(){clearCanvas()}
 	redraw.onclick=()=>RedrawShapes()
 	transform.onclick=()=>tween()
 	line.onclick=()=>{
-		console.log("shape",shape,mouse,count)
 		if(shape.points.length>0){
-			console.log("shape",shape)
 			shape.points=[]
 		}
 		pencil_line=1
@@ -34,6 +30,20 @@ function init(){
 		}
 		pencil_line=0
 	}
+	shape.onclick=()=>{
+		if(shape.points.length>0){
+			shape.points=[]
+		}
+		pencil_line=1
+	}
+	drawCircumCircle.onclick=()=>{
+		shape1.drawCircumCircle()
+	}
+	selectShape.onclick=()=>{
+		cvs.style.cursor= "pointer"
+		shapeSelection=1
+		pencil_line=null
+	}
 
 	document.body.addEventListener('keydown',function(e){
 		e=event||window.event;
@@ -41,36 +51,33 @@ function init(){
 		var keyCode=e.charCode || e.keyCode;
 		console.log("keydown",keyCode)
 		if(keyCode=== 13){
+			shape=joinShape(shape)
+			shape.draw()
 			changeShape()
 		}
 		
 	})
 
 	cvs.onclick=function(e){
+		
 		if(pencil_line===1){
 			var p=new Point(getMousePos(e))
+			p.draw()
 			shape.addPoint(p)
-			console.log("p",p)
-			if(count===0){
-				x1=p.x;
-				y1=p.y;
-				count++;
-			}
-			else{
-				x2=p.x;
-				y2=p.y;
-				ctx.moveTo(x1,y1);
-				ctx.lineTo(x2,y2);
-				ctx.stroke();
-				x1=x2;
-				y1=y2;
-			}
-			// if(shapeNumber===0 && shape.points.length>0){
-			// 	shapeNumber===1
-			// }
+			clacAndDrawLine(p)
 		}
 	}
 	document.body.addEventListener('mousedown',function(e){
+		if(shapeSelection===1){
+			var p=new Point(getMousePos(e))
+			console.log("p",p)
+			var index=shape1.findPoint(p)
+			console.log("index",index)
+			if(index!==null){
+				selectIndex=index
+				selectMoving=1
+			}
+		}
 		if(pencil_line===0){
 			var p=new Point(getMousePos(e))
 			shape.addPoint(p)
@@ -80,6 +87,17 @@ function init(){
 		}
 	})
 	document.body.addEventListener('mousemove',function(e){
+		if(selectMoving===1){
+			var p=new Point(getMousePos(e))
+			if(selectIndex===0 || selectIndex===shape1.points.length-1){
+				shape1.replace(0,p)
+				shape1.replace(shape1.points.length-1,p)
+			}
+			else shape1.replace(selectIndex,p)
+			clearCanvas()
+			shape1.draw()
+			shape2.draw()
+		}
 		if(pencil_line===0 && mouse===1){
 			var p=new Point(getMousePos(e))
 			shape.addPoint(p)
@@ -95,6 +113,10 @@ function init(){
 		
 	})
 	document.body.addEventListener('mouseup',function(e){
+		if(selectMoving===1){
+			selectIndex=null
+			selectMoving=0
+		}
 		if(pencil_line===0){
 			mouse=0;
 		}
@@ -102,7 +124,37 @@ function init(){
 	})
 	
 }
+function joinShape(s){
+	if(s.points.length>1){
+		console.log("s",s.points)
+		var init=s.points[0]
+		var end=s.points[s.points.length-1]
+		console.log("init end",init,end)
+		if(init.x===end.x && init.y===end.y){
+			return s
+		}else{
+			s.addPoint(init)
+			return s
+		}
+	}
 
+}
+function clacAndDrawLine(p){
+	if(count===0){
+		x1=p.x;
+		y1=p.y;
+		count++;
+	}
+	else{
+		x2=p.x;
+		y2=p.y;
+		ctx.moveTo(x1,y1);
+		ctx.lineTo(x2,y2);
+		ctx.stroke();
+		x1=x2;
+		y1=y2;
+	}
+}
 function getMousePos(e){
     var rect=cvs.getBoundingClientRect();
     return{
@@ -150,11 +202,13 @@ function changeShape(){
 		shapeNumber++
 		if(shape1.points.length<1){
 			shape1.points=shape.points
+			shape1.lines=shape.lines
 			shape=new Shape()
 			console.log("shape",shape1)
 			count=0
 		}else if(shape2.points.length<1){
 			shape2.points=shape.points
+			shape2.lines=shape.lines
 			shape=new Shape()
 			console.log("shape",shape2)
 			count=0
