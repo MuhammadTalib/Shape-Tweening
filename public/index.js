@@ -1,7 +1,7 @@
 window.onload=init()
-var cvs,ctx,count,x1,y1,x2,y2,shapeNumber,shape1,shape2,t,clearButton,shape,tweenShape,selectIndex,pencil_line,mouse,shapeSelection,selectMoving
+var cvs,ctx,count,x1,y1,x2,y2,shapeNumber,shape1,shape2,t,clearButton,shape,tweenShape,selectIndex,pencil_line,mouse,shapeSelection,selectMoving,cc,tweencontinue
 function init(){
-	shapeNumber=0,t=0,count=0,pencil_line=0,mouse=0,shapeSelection=0,selectMoving=0,selectIndex=null
+	shapeNumber=0,t=0,count=0,pencil_line=0,mouse=0,shapeSelection=0,selectMoving=0,selectIndex=null,cc=0,ic=1,tweencontinue=0
 	shape1=new Shape()
 	shape2=new Shape()
 
@@ -37,12 +37,19 @@ function init(){
 		pencil_line=1
 	}
 	drawCircumCircle.onclick=()=>{
+		cc=1
 		shape1.drawCircumCircle()
+		shape2.drawCircumCircle()
 	}
 	selectShape.onclick=()=>{
 		cvs.style.cursor= "pointer"
 		shapeSelection=1
 		pencil_line=null
+	}
+	drawInscribed.onclick=()=>{
+		ic=1
+		shape1.drawInscribedCircle()
+		shape2.drawInscribedCircle()
 	}
 
 	document.body.addEventListener('keydown',function(e){
@@ -97,6 +104,10 @@ function init(){
 			clearCanvas()
 			shape1.draw()
 			shape2.draw()
+			if(cc===1){
+				shape1.drawCircumCircle()
+				shape2.drawCircumCircle()
+			}
 		}
 		if(pencil_line===0 && mouse===1){
 			var p=new Point(getMousePos(e))
@@ -126,10 +137,10 @@ function init(){
 }
 function joinShape(s){
 	if(s.points.length>1){
-		console.log("s",s.points)
+		//console.log("s",s.points)
 		var init=s.points[0]
 		var end=s.points[s.points.length-1]
-		console.log("init end",init,end)
+		//console.log("init end",init,end)
 		if(init.x===end.x && init.y===end.y){
 			return s
 		}else{
@@ -164,37 +175,55 @@ function getMousePos(e){
 
 }
 function tween(){
-	if(shape1.points.length>shape2.points.length){
-		p1=shape2.points.pop()
-		p2=shape2.points.pop()
-		p3=new Point({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2})
-		shape2.points.push(p2)
-		shape2.points.push(p3)
-		shape2.points.push(p1)
-		tween()
-	}else if(shape2.points.length>shape1.points.length){
-		p1=shape1.points.pop()
-		p2=shape1.points.pop()
-		p3=new Point({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2})
-		shape1.points.push(p2)
-		shape1.points.push(p3)
-		shape1.points.push(p1)
-		tween()
+	
+	if(tweencontinue){
+		console.log("cancel tweening")
+		tweencontinue=0
+	}else{
+		console.log("tweening")
+		if(shape1.points.length>shape2.points.length){
+			p1=shape2.points.pop()
+			p2=shape2.points.pop()
+			p3=new Point({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2})
+			shape2.points.push(p2)
+			shape2.points.push(p3)
+			shape2.points.push(p1)
+			tween()
+		}else if(shape2.points.length>shape1.points.length){
+			p1=shape1.points.pop()
+			p2=shape1.points.pop()
+			p3=new Point({x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2})
+			shape1.points.push(p2)
+			shape1.points.push(p3)
+			shape1.points.push(p1)
+			tween()
+		}
+		if(shape1.points.length===shape2.points.length){
+			
+			tweencontinue=1	
+			tweenShape=new Shape()
+			t=0
+			requestAnimationFrame(gameLoop)
+		}
 	}
-	if(shape1.points.length===shape2.points.length){	
-		tweenShape=new Shape()
-		t=0
-		requestAnimationFrame(gameLoop)
-	}
+	
 }
 
 function gameLoop() {
-	if(t<=1){
+	if(t>=1){
+		t=0
+		shape=shape1
+		shape1=shape2
+		shape2=shape
+	}
+	if(tweencontinue){
 		clearCanvas()
 		update()
 		render()
 		requestAnimationFrame(gameLoop)
 	}
+		
+	
 
 }
 function changeShape(){
@@ -223,7 +252,7 @@ function update(){
 	for(var i=0;i<shape1.points.length;i++){
 		tweenShape.points[i]={x:lerp(shape1.points[i].x,shape2.points[i].x,t),y:lerp(shape1.points[i].y,shape2.points[i].y,t)}
 	}
-	t+=0.002
+	t+=0.01
 }
 function lerp(start,end,t){
 	return (1-t)*start+(t*end)
