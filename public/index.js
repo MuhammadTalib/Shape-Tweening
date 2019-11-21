@@ -30,12 +30,12 @@ function init(){
 		}
 		pencil_line=0
 	}
-	shape.onclick=()=>{
+/*	shape.onclick=()=>{
 		if(shape.points.length>0){
 			shape.points=[]
 		}
 		pencil_line=1
-	}
+	}*/
 	drawCircumCircle.onclick=()=>{
 		cc=1
 		shape1.drawCircumCircle()
@@ -46,11 +46,11 @@ function init(){
 		shapeSelection=1
 		pencil_line=null
 	}
-	drawInscribed.onclick=()=>{
+	/*drawInscribed.onclick=()=>{
 		ic=1
 		shape1.drawInscribedCircle()
 		shape2.drawInscribedCircle()
-	}
+	}*/
 
 	document.body.addEventListener('keydown',function(e){
 		e=event||window.event;
@@ -177,10 +177,8 @@ function getMousePos(e){
 function tween(){
 	
 	if(tweencontinue){
-		console.log("cancel tweening")
 		tweencontinue=0
 	}else{
-		console.log("tweening")
 		if(shape1.points.length>shape2.points.length){
 			p1=shape2.points.pop()
 			p2=shape2.points.pop()
@@ -212,9 +210,10 @@ function tween(){
 function gameLoop() {
 	if(t>=1){
 		t=0
-		shape=shape1
+		tweencontinue=0
+		/*shape=shape1
 		shape1=shape2
-		shape2=shape
+		shape2=shape*/
 	}
 	if(tweencontinue){
 		clearCanvas()
